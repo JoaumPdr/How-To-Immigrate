@@ -1,0 +1,19 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "error": "Ocorreu um erro. Tente novamente.",
+    "save": "Salvar",
+    "cancel": "Cancelar"
+  },
+  "nav": {
+    "home": "Início",
+    "countries": "Países",
+    "map": "Mapa Interativo",
+    "reviews": "Avaliações",
+    "about": "Sobre"
+  },
+  "home": {
+    "title": "Como Imigrar",
+    "subtitle": "Compare critérios de imigração, explore o mapa interativo e planeje seu roadmap personalizado."
+  }
+}

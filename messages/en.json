@@ -1,0 +1,19 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred. Please try again.",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "nav": {
+    "home": "Home",
+    "countries": "Countries",
+    "map": "Interactive Map",
+    "reviews": "Reviews",
+    "about": "About"
+  },
+  "home": {
+    "title": "How To Immigrate",
+    "subtitle": "Compare immigration criteria, explore the interactive map, and plan your custom roadmap."
+  }
+}

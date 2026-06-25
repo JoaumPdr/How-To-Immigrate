@@ -71,4 +71,18 @@ middleware.ts              # Interceptador para segurança e i18n
 ### 2.1 Justificativa da Estrutura
 - **i18n na raiz:** Facilita o mapeamento do plugin do `next-intl` no compilador do Next.js 15, garantindo suporte nativo a Server Components.
 - **Divisão do components/:** Evita acúmulo de arquivos soltos. Separa componentes visuais simples (primitivos) de componentes altamente acoplados ao domínio do produto (como mapa ou dashboard).
-- **lib/repositories/:** Permite isolar o Prisma Client das páginas do Next.js, facilitando a testabilidade e isolamento da camada de dados.
+- **lib/repositories/**: Permite isolar o Prisma Client das páginas do Next.js, facilitando a testabilidade e isolamento da camada de dados.
+
+---
+
+## 3. Contratos de Tipos (Etapa 01)
+
+Para o desenvolvimento em paralelo do Frontend e Backend, criamos em `lib/data/types.ts` a modelagem preliminar de todas as entidades de domínio da plataforma:
+
+1. **Country & CountryScores:** Modelagem para comparação de países, agregando notas para custo de vida, segurança, facilidade de visto, mercado de trabalho, saúde e integração cultural.
+2. **UserProfile:** Dados do usuário, incluindo país-alvo de imigração e orçamento estimado.
+3. **Review & ReviewCategoryScore:** Estrutura para os relatos e reviews da comunidade por múltiplos indicadores de 1 a 5 estrelas.
+4. **Article:** Estrutura da base de conhecimento e guias de imigração.
+5. **Roadmap & RoadmapStep:** Representação das trilhas personalizadas de tarefas passo a passo de imigração por usuário.
+
+Esses tipos TS com JSDoc atuam como fonte da verdade estática e serão migrados e alinhados para os tipos gerados automaticamente pelo Prisma Client na **Etapa 02**.

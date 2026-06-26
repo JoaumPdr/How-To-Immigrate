@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { signIn } from "next-auth/react";
@@ -10,7 +10,7 @@ import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
 import Link from "next/link";
 
-export default function LoginPage() {
+function LoginForm() {
   const t = useTranslations("auth");
   const searchParams = useSearchParams();
 
@@ -252,5 +252,17 @@ export default function LoginPage() {
         </form>
       </Modal>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[80vh] items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

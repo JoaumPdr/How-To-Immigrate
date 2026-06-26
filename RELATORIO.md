@@ -71,4 +71,213 @@ middleware.ts              # Interceptador para segurança e i18n
 ### 2.1 Justificativa da Estrutura
 - **i18n na raiz:** Facilita o mapeamento do plugin do `next-intl` no compilador do Next.js 15, garantindo suporte nativo a Server Components.
 - **Divisão do components/:** Evita acúmulo de arquivos soltos. Separa componentes visuais simples (primitivos) de componentes altamente acoplados ao domínio do produto (como mapa ou dashboard).
-- **lib/repositories/:** Permite isolar o Prisma Client das páginas do Next.js, facilitando a testabilidade e isolamento da camada de dados.
+- **lib/repositories/**: Permite isolar o Prisma Client das páginas do Next.js, facilitando a testabilidade e isolamento da camada de dados.
+
+---
+
+## 3. Contratos de Tipos e Evolução (Etapa 02)
+
+Para o desenvolvimento em paralelo, criamos em `lib/data/types.ts` a modelagem preliminar das entidades de domínio. Na **Etapa 02**, esse arquivo foi complementado pelo arquivo de tipos tipados e derivados do Prisma em [generated-types.ts](file:///c:/Users/joaop/antigravity%20web%20projects/HowToImmigrate/lib/data/generated-types.ts). Todos os componentes de interface agora consomem os tipos derivados diretamente do banco de dados, garantindo consistência estrita de tipos em toda a aplicação.
+
+---
+
+## 4. Modelagem de Dados — Diagrama de Entidades (ERD)
+
+Abaixo está a representação visual do banco de dados PostgreSQL estruturado por meio do Prisma ORM para suportar todas as funcionalidades do sistema:
+
+```mermaid
+erDiagram
+    users ||--o| user_profiles : "tem perfil"
+    users ||--o{ accounts : "autentica via"
+    users ||--o{ sessions : "possui"
+    users ||--o{ authenticators : "registra"
+    users ||--o{ reviews : "escreve"
+    users ||--o{ roadmaps : "segue"
+
+    countries ||--o{ country_indicators : "possui"
+    countries ||--o{ reviews : "recebe"
+    countries ||--o{ articles : "associa-se a"
+    countries ||--o{ roadmaps : "pertence a"
+
+    reviews ||--o{ review_category_scores : "contém"
+    roadmaps ||--o{ roadmap_steps : "é composto de"
+    article_categories ||--o{ articles : "agrupa"
+
+    users {
+        uuid id PK
+        string name
+        string email UK
+        datetime email_verified
+        string image
+        datetime created_at
+        datetime updated_at
+    }
+
+    user_profiles {
+        uuid id PK
+        uuid user_id FK,UK
+        int age
+        string nationality
+        string education
+        string profession
+        string[] languages
+        string immigration_objective
+        datetime created_at
+        datetime updated_at
+    }
+
+    countries {
+        uuid id PK
+        string slug UK
+        string name
+        string name_en
+        string code_iso2 UK
+        string code_iso3 UK
+        string region
+        string capital
+        string currency
+        string[] languages
+        string flag_url
+        float overall_score
+        datetime created_at
+        datetime updated_at
+    }
+
+    country_indicators {
+        uuid id PK
+        uuid country_id FK
+        string category
+        float score
+        float raw_value
+        string source
+        datetime created_at
+        datetime updated_at
+    }
+
+    reviews {
+        uuid id PK
+        uuid user_id FK
+        uuid country_id FK
+        float rating
+        string content
+        datetime created_at
+        datetime updated_at
+    }
+
+    review_category_scores {
+        uuid id PK
+        uuid review_id FK
+        string category
+        float score
+        datetime created_at
+        datetime updated_at
+    }
+
+    roadmaps {
+        uuid id PK
+        uuid user_id FK
+        uuid country_id FK
+        int progress_percentage
+        datetime created_at
+        datetime updated_at
+    }
+
+    roadmap_steps {
+        uuid id PK
+        uuid roadmap_id FK
+        int order
+        string title
+        string description
+        string status
+        string visa_type
+        string[] documents
+        string official_link
+        datetime created_at
+        datetime updated_at
+    }
+
+    articles {
+        uuid id PK
+        string slug UK
+        string title
+        string summary
+        string content
+        uuid category_id FK
+        uuid country_id FK
+        string[] tags
+        string author_name
+        int read_time_minutes
+        datetime published_at
+        datetime created_at
+        datetime updated_at
+    }
+
+    affiliate_partners {
+        uuid id PK
+        string name
+        string logo_url
+        string description
+        string website_url
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+```
+
+---
+
+## 5. Algoritmo de Scoring Transparente
+
+O cálculo da nota geral de imigração de cada país (`overallScore`) é realizado através de uma média ponderada com os seguintes pesos definidos em [scoring.ts](file:///c:/Users/joaop/antigravity%20web%20projects/HowToImmigrate/lib/data/scoring.ts):
+
+| Categoria do Indicador | Peso Ponderado | Justificativa |
+| :--- | :--- | :--- |
+| **Segurança (`safety`)** | `25%` (0.25) | Critério primordial de integridade física e estabilidade social. |
+| **Custo de Vida (`costOfLiving`)** | `20%` (0.20) | Viabilidade financeira imediata para o sustento próprio. |
+| **Mercado de Trabalho (`jobMarket`)** | `20%` (0.20) | Oportunidade de obtenção de renda e recolocação profissional. |
+| **Facilidade de Visto (`visaEase`)** | `15%` (0.15) | Barreiras burocráticas de entrada e legalização. |
+| **Saúde (`healthcare`)** | `10%` (0.10) | Qualidade de vida associada a infraestrutura e acesso médico. |
+| **Adaptação Cultural (`culturalIntegration`)** | `10%` (0.10) | Facilidade de idioma e aceitação/receptividade da comunidade local. |
+
+### 5.1 Fórmula Matemática
+
+$$Score_{Geral} = \frac{\sum_{i=1}^{n} (Score_{i} \times Peso_{i})}{\sum_{i=1}^{n} Peso_{i}}$$
+
+*Se algum indicador estiver ausente, a fórmula redistribui os pesos proporcionalmente entre os indicadores que estão presentes, dividindo a soma ponderada pela soma dos pesos presentes. Isso evita penalizações injustas a países com dados incompletos.*
+
+### 5.2 Exemplo Numérico (Canadá)
+
+Indicadores reais aproximados utilizados no Seed para o Canadá:
+*   **Safety (25%):** 85.0
+*   **Cost of Living (20%):** 45.0
+*   **Job Market (20%):** 80.0
+*   **Visa Ease (15%):** 65.0
+*   **Healthcare (10%):** 88.0
+*   **Cultural Integration (10%):** 90.0
+
+Cálculo detalhado:
+\[WeightedSum = (85 \times 0.25) + (45 \times 0.20) + (80 \times 0.20) + (65 \times 0.15) + (88 \times 0.10) + (90 \times 0.10)\]
+\[WeightedSum = 21.25 + 9.00 + 16.00 + 9.75 + 8.80 + 9.00 = 73.80\]
+\[Soma\ dos\ Pesos = 0.25 + 0.20 + 0.20 + 0.15 + 0.10 + 0.10 = 1.00\]
+\[Score_{Geral} = \frac{73.80}{1.00} = 73.80\]
+
+O `overallScore` final arredondado do Canadá será **73.80**.
+
+---
+
+## 6. Segurança de Dados — Políticas de RLS (Row-Level Security)
+
+Para proteger dados de usuários e avaliações no Supabase, as seguintes políticas de Row-Level Security foram definidas para implantação na Etapa 04 (Autenticação):
+
+### 6.1 Tabela `user_profiles`
+*   **SELECT:** Permitido a qualquer usuário autenticado cujo `user_id` coincida com seu UUID (`auth.uid() = user_id`).
+*   **INSERT / UPDATE:** Permitido apenas se `auth.uid() = user_id`.
+*   **DELETE:** Bloqueado (usuários apenas desativam perfis ou usam Soft Delete).
+
+### 6.2 Tabela `reviews`
+*   **SELECT:** Acesso público irrestrito para avaliações que tenham sido moderadas e aprovadas pelo sistema.
+*   **INSERT:** Permitido a qualquer usuário autenticado.
+*   **UPDATE / DELETE:** Permitido somente se `auth.uid() = user_id` (o autor original da review) ou se o usuário autenticado possuir privilégios de administrador.
+
+### 6.3 Tabela `roadmaps`
+*   **SELECT / INSERT / UPDATE:** Acesso estrito e exclusivo ao dono da trilha (`auth.uid() = user_id`).

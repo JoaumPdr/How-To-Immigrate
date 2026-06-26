@@ -60,7 +60,17 @@
    npx prisma generate
    ```
 
-5. **Iniciar o Servidor de Desenvolvimento:**
+5. **Executar as Migrations do Banco de Dados:**
+   ```bash
+   npx prisma migrate dev
+   ```
+
+6. **Popular o Banco com Dados Iniciais (Seed):**
+   ```bash
+   npm run seed
+   ```
+
+7. **Iniciar o Servidor de Desenvolvimento:**
    ```bash
    npm run dev
    ```

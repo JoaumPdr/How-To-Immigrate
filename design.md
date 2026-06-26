@@ -118,3 +118,26 @@ Todos os componentes abaixo foram implementados sob a pasta `components/ui/` uti
 ## 4. Componentes Testados e Validados (Suíte E2E & Snapshot)
 
 Todos os componentes primitivos possuem testes automatizados de snapshot em `__tests__/components.test.tsx` e foram validados em produção. O comportamento responsivo da Navbar e do Footer, a persistência da escolha do idioma (next-intl cookies) e a persistência da escolha de tema (localStorage class list) estão cobertos por testes de integração de interface no Playwright.
+
+---
+
+## 5. Interação do Mapa por Dispositivo
+
+Esta seção detalha o padrão de comportamento de UX para interações em mapas geográficos e visualizações de dados (como o comparador de países) entre diferentes dispositivos.
+
+### 5.1 Desktop (Interação via Mouse)
+- **Hover (Passar o Mouse):** Exibe imediatamente o `CountryTooltip` no cursor do mouse com informações consolidadas do país (nome, score geral, indicadores de segurança, custo de vida, mercado de trabalho e idioma).
+- **Click (Clique Simples):** Navega imediatamente para a página de detalhes do país em `/country/[slug]`.
+
+### 5.2 Mobile e Touch (Interação via Toque)
+- **Primeiro Tap (Toque Único):** Em vez de hover, exibe o `CountryTooltip` fixado na tela próximo à área tocada. Um botão de fechamento (X) fica disponível e o tooltip pode ser fechado clicando em qualquer área vazia fora dele ou no próprio mapa.
+- **Segundo Tap / "Ver detalhes":** Um segundo toque sobre o mesmo país (ou o clique no link "Ver detalhes" dentro do tooltip) realiza a navegação para `/country/[slug]`.
+- **Pan e Zoom:** Gestos de arrastar com um dedo realizam o Pan (movimentação) do mapa. Gestos de pinça (pinch-to-zoom) permitem aproximar e afastar. O zoom do mapa ignora o evento de rolagem vertical (wheel) para não atrapalhar o scroll vertical natural da página.
+
+### 5.3 Hit Areas Ampliadas para Microestados
+- Países pequenos com áreas geográficas reduzidas (ex: Singapura, Luxemburgo, Malta, Andorra) possuem um marcador visual de cor e uma **área de toque invisível ampliada (hit target)** circular com raio de 22px (diâmetro de 44px) ao redor de suas coordenadas geográficas. Isso garante acessibilidade e previne a frustração em telas touch.
+
+### 5.4 Filtros e Legenda Responsivos
+- **Filtros no Desktop:** Exibidos horizontalmente acima do mapa como um painel inline de fácil acesso.
+- **Filtros no Mobile:** A barra horizontal é omitida e substituída por um botão "Filtros" que abre o componente `Sheet` a partir da base (gaveta bottom-sheet), economizando espaço vertical de tela.
+- **Legenda:** Renderizada no canto inferior esquerdo do mapa. No mobile, é formatada de forma compacta.

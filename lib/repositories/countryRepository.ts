@@ -25,6 +25,54 @@ export interface CountryWithIndicators {
 
 export const countryRepository = {
   /**
+   * Retorna os dados otimizados e mínimos para renderizar o mapa interativo.
+   * Evita tráfego de colunas pesadas como descrições ou conteúdos de artigos.
+   */
+  async findMapView(): Promise<{
+    slug: string;
+    name: string;
+    nameEn: string;
+    codeISO2: string;
+    codeISO3: string;
+    region: string;
+    languages: string[];
+    overallScore: number;
+    indicators: { category: string; score: number }[];
+  }[]> {
+    return prisma.country.findMany({
+      select: {
+        slug: true,
+        name: true,
+        nameEn: true,
+        codeISO2: true,
+        codeISO3: true,
+        region: true,
+        languages: true,
+        overallScore: true,
+        indicators: {
+          select: {
+            category: true,
+            score: true
+          }
+        }
+      },
+      orderBy: {
+        name: "asc"
+      }
+    }) as unknown as Promise<{
+      slug: string;
+      name: string;
+      nameEn: string;
+      codeISO2: string;
+      codeISO3: string;
+      region: string;
+      languages: string[];
+      overallScore: number;
+      indicators: { category: string; score: number }[];
+    }[]>;
+  },
+
+  /**
    * Retorna a lista completa de países com seus indicadores.
    * Ideal para renderização no mapa global e listagens.
    */

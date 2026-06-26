@@ -3,7 +3,8 @@ import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Globe, Plane, Shield, DollarSign, Briefcase } from "lucide-react";
+import { Shield } from "lucide-react";
+import { InteractiveMapSection } from "@/components/map/InteractiveMapSection";
 
 export default async function Home({
   params,
@@ -96,76 +97,33 @@ export default async function Home({
         </div>
       </section>
 
-      {/* 2. Seção Informativa & Mapa Placeholder */}
+      {/* 2. Seção Informativa & Mapa Interativo Real */}
       <section className="px-6 py-16 bg-slate-50 dark:bg-slate-900/20 border-y border-border">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Texto Descritivo */}
-            <div className="flex flex-col gap-6 text-left">
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+        <div className="mx-auto max-w-7xl flex flex-col gap-10">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-border/60 pb-6">
+            <div className="flex flex-col gap-2">
+              <h2 className="text-3xl font-extrabold tracking-tight">
                 {locale === "pt-BR" 
                   ? "Explore o Mundo através dos Critérios que Importam" 
                   : "Explore the World by Criteria That Matter"}
               </h2>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
                 {locale === "pt-BR"
-                  ? "Nossa plataforma consolida dados atualizados sobre os destinos mais buscados para imigração. Filtre e classifique países de acordo com suas preferências financeiras, profissionais e de estilo de vida."
-                  : "Our platform aggregates up-to-date data on the most popular immigration destinations. Filter and rank countries based on your financial, career, and lifestyle preferences."}
+                  ? "Compare destinos de imigração de forma visual e transparente. Filtre por regiões geográficas ou faixas de pontuação e visualize as cores do gradiente de score para cada país em tempo real."
+                  : "Compare immigration destinations visually and transparently. Filter by geographic regions or score ranges and visualize country score gradient colors in real time."}
               </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card">
-                  <Shield className="h-5 w-5 text-emerald-500 mt-1 shrink-0" />
-                  <div>
-                    <h4 className="font-bold text-sm">{locale === "pt-BR" ? "Segurança" : "Safety"}</h4>
-                    <p className="text-xs text-muted-foreground">{locale === "pt-BR" ? "Dados de criminalidade" : "Crime index statistics"}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card">
-                  <DollarSign className="h-5 w-5 text-amber-500 mt-1 shrink-0" />
-                  <div>
-                    <h4 className="font-bold text-sm">{locale === "pt-BR" ? "Custo de Vida" : "Cost of Living"}</h4>
-                    <p className="text-xs text-muted-foreground">{locale === "pt-BR" ? "Cálculo de aluguel e gastos" : "Housing and spending estimates"}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card">
-                  <Briefcase className="h-5 w-5 text-primary mt-1 shrink-0" />
-                  <div>
-                    <h4 className="font-bold text-sm">{locale === "pt-BR" ? "Trabalho" : "Job Market"}</h4>
-                    <p className="text-xs text-muted-foreground">{locale === "pt-BR" ? "Demandas de contratação" : "In-demand career options"}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card">
-                  <Plane className="h-5 w-5 text-indigo-500 mt-1 shrink-0" />
-                  <div>
-                    <h4 className="font-bold text-sm">{locale === "pt-BR" ? "Vistos facilitados" : "Visa Pathways"}</h4>
-                    <p className="text-xs text-muted-foreground">{locale === "pt-BR" ? "Opções de vistos e residência" : "Student, digital nomad, and worker options"}</p>
-                  </div>
-                </div>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <div className="flex items-center gap-1 text-xs text-emerald-500 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                <Shield className="w-3.5 h-3.5" />
+                {locale === "pt-BR" ? "Dados Consolidados" : "Consolidated Data"}
               </div>
             </div>
+          </div>
 
-            {/* Mapa Estático / Ilustrativo */}
-            <div className="relative rounded-2xl overflow-hidden border border-border bg-card shadow-2xl p-4 flex flex-col items-center justify-center min-h-[300px] sm:min-h-[400px]">
-              {/* Overlay Glassmorphism */}
-              <div className="absolute inset-0 bg-slate-950/5 dark:bg-slate-950/20 backdrop-blur-xs pointer-events-none" />
-              
-              <Globe className="h-24 w-24 text-primary animate-pulse mb-6" />
-              <h3 className="text-xl font-bold tracking-tight mb-2">
-                {locale === "pt-BR" ? "Mapa Interativo Visual" : "Interactive Visual Map"}
-              </h3>
-              <p className="text-sm text-muted-foreground text-center max-w-sm mb-6 leading-relaxed">
-                {locale === "pt-BR"
-                  ? "Na Etapa 03, você poderá interagir diretamente com um mapa vetorial completo contendo todos os indicadores de imigração."
-                  : "In Stage 03, you will be able to directly interact with a full vector map containing all immigration indicators."}
-              </p>
-              <Link href="/map">
-                <Button variant="outline" className="gap-2">
-                  <Plane className="h-4 w-4" />
-                  {locale === "pt-BR" ? "Conhecer o Mapa" : "Explore Map"}
-                </Button>
-              </Link>
-            </div>
+          {/* Seção do Mapa Interativo */}
+          <div className="w-full">
+            <InteractiveMapSection />
           </div>
         </div>
       </section>

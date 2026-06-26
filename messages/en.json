@@ -15,5 +15,24 @@
   "home": {
     "title": "How To Immigrate",
     "subtitle": "Compare immigration criteria, explore the interactive map, and plan your custom roadmap."
+  },
+  "map": {
+    "title": "Interactive Immigration Map",
+    "filterTitle": "Map Filters",
+    "region": "Region",
+    "allRegions": "All Regions",
+    "indicator": "Color by Indicator",
+    "overallScore": "Overall Score",
+    "safety": "Safety",
+    "costOfLiving": "Cost of Living",
+    "jobMarket": "Job Market",
+    "visaEase": "Visa Ease",
+    "healthcare": "Healthcare",
+    "culturalIntegration": "Cultural Integration",
+    "scoreRange": "Score Range",
+    "allScores": "All Scores",
+    "viewDetails": "View details",
+    "noCountries": "No countries match the selected filters.",
+    "filters": "Filters"
   }
 }

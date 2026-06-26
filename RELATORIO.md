@@ -281,3 +281,47 @@ Para proteger dados de usuários e avaliações no Supabase, as seguintes polít
 
 ### 6.3 Tabela `roadmaps`
 *   **SELECT / INSERT / UPDATE:** Acesso estrito e exclusivo ao dono da trilha (`auth.uid() = user_id`).
+
+---
+
+## 7. Arquitetura e Fluxo de Dados do Mapa Interativo (Etapa 03)
+
+O mapa-múndi interativo representa a principal proposta de valor inicial da plataforma. A arquitetura de dados e de UX foi desenhada para garantir máxima performance, minificação de payload e excelente usabilidade em todos os viewports (375px, 768px, 1440px).
+
+### 7.1 Fluxo de Dados Unidirecional
+
+A renderização e interação do mapa seguem o seguinte pipeline de dados:
+
+```mermaid
+graph TD
+    DB[(Supabase / Postgres)] -->|Prisma Client| Repo[countryRepository.findMapView]
+    Repo -->|Filtro de Colunas Mínimo| API[GET /api/map]
+    API -->|ISR Cache 6 horas| Hook[useMapData.ts]
+    Hook -->|React State| Component[InteractiveMapSection]
+    Component -->|Countries Data| WorldMap[WorldMap.tsx]
+    Component -->|Filtros de Estado| MapFilters[MapFilters.tsx]
+    WorldMap -->|Filtros Regionais & Scores| SVG[SVG Map Paths]
+    SVG -->|Cor Dinâmica HSL| Gradient[MapColorGradient.ts]
+```
+
+1.  **Banco de Dados (PostgreSQL):** Os indicadores reais de ~200 países populados no banco servem como fonte de verdade.
+2.  **Repositório (`countryRepository.findMapView`):** Executa uma query otimizada no Prisma, ignorando dados volumosos (artigos, guias, descrições, histórico de auditoria) e selecionando apenas os atributos vitais ao mapa: `slug`, `name`, `nameEn`, `codeISO2`, `codeISO3`, `region`, `languages`, `overallScore` e `indicators` (apenas categoria e score).
+3.  **API (`GET /api/map`):** Serve os dados estruturados de forma minificada com **ISR (Incremental Static Regeneration) de 6 horas** (`revalidate: 21600`) e cabeçalho `Cache-Control` configurado para Edge Caching em produção.
+4.  **Hook (`useMapData.ts`):** Requisita a API, gerencia estados de `loading`, `error` e devolve a lista tipada para o shell.
+5.  **InteractiveMapSection (`InteractiveMapSection.tsx`):** Orquestra e conecta os seletores de filtros (`MapFilters`) e o mapa (`WorldMap`), filtrando a renderização em tempo real.
+6.  **Interpolação de Cores (`MapColorGradient.ts`):** Uma função memoizada que mapeia o score (0 a 100) para cores no espaço de cores HSL, transitando suavemente entre Vermelho (score 0), Laranja/Amarelo (score 50) e Verde Esmeralda (score 100). Valores nulos de score são representados pela cor cinza neutra (`var(--color-border)`).
+
+### 7.2 Decisões de UX para Responsividade e Touch
+
+A adaptação de um mapa cartográfico para telas de toque exige soluções específicas além do CSS fluido tradicional:
+
+-   **Hover vs. Tap (Toque):**
+    *   **Desktop:** O `CountryTooltip` é acionado pelo evento de `mouseenter` e segue a coordenada do ponteiro do mouse via `mousemove`. Um clique simples no país navega para a página `/country/[slug]`.
+    *   **Mobile / Touch:** O primeiro toque (tap) no país exibe o tooltip em formato fixado, adicionando um botão "X" para fechamento. O tooltip se auto-ajusta à viewport para nunca vazar. O segundo toque (ou o clique em "Ver detalhes" dentro do tooltip) navega para `/country/[slug]`. Um clique fora fecha o tooltip.
+-   **Gesto de Zoom e Pan:**
+    *   O pan (arraste com 1 dedo) e zoom de pinça (pinch-to-zoom) estão disponíveis dentro do elemento SVG do mapa. Para evitar prender o scroll vertical da página em telas mobile, o evento de scroll vertical (`wheel`) no mapa é desabilitado em viewports de toque.
+-   **Hit Targets de Países Pequenos (Microestados):**
+    *   Microestados como Singapura, Luxemburgo, Malta e Andorra foram enriquecidos com coordenadas de marcadores e uma **área de toque invisível expandida (círculo com raio de 22px / diâmetro de 44px)**, evitando a frustração do usuário ao tentar interagir com caminhos menores do que a ponta do dedo.
+-   **Componentes Responsivos Adicionais:**
+    *   **Filtros:** Barra horizontal inline no desktop, mas colapsada em um botão "Filtros" que abre um painel bottom-sheet deslizante (`Sheet`) no mobile.
+    *   **Legenda:** Exibida de forma expandida no desktop e compacta/flutuante (com menu toggle) no mobile.

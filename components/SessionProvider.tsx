@@ -1,15 +1,16 @@
 "use client";
 
 import * as React from "react";
+import { SessionProvider as AuthSessionProvider } from "next-auth/react";
 
 interface SessionProviderProps {
   children: React.ReactNode;
 }
 
 /**
- * Provedor de sessão placeholder para a Etapa 01.
- * Será substituído pela integração real com NextAuth na Etapa 04.
+ * Provedor de Sessão do NextAuth v5.
+ * Fornece o contexto de autenticação para todos os componentes do lado do cliente.
  */
 export function SessionProvider({ children }: SessionProviderProps) {
-  return <>{children}</>;
+  return <AuthSessionProvider>{children}</AuthSessionProvider>;
 }

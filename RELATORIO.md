@@ -1,6 +1,6 @@
-# Relatório Técnico — Etapa 00: Fundação e Infraestrutura
+# Relatório Técnico de Engenharia — How To Immigrate
 
-Este documento formaliza as decisões arquiteturais da infraestrutura técnica e de banco de dados do projeto **How To Immigrate**.
+Este documento formaliza as decisões arquiteturais da infraestrutura técnica, de banco de dados e segurança do projeto **How To Immigrate**.
 
 ---
 
@@ -281,3 +281,59 @@ Para proteger dados de usuários e avaliações no Supabase, as seguintes polít
 
 ### 6.3 Tabela `roadmaps`
 *   **SELECT / INSERT / UPDATE:** Acesso estrito e exclusivo ao dono da trilha (`auth.uid() = user_id`).
+
+---
+
+## 7. Sistema de Autenticação, Onboarding & Perfil (Etapa 04)
+
+Na **Etapa 04**, a camada de autenticação segura e o questionário de onboarding multi-step responsivo foram totalmente consolidados.
+
+### 7.1 Diagrama de Estados do Fluxo de Onboarding
+
+O fluxo de dados de onboarding garante que novos usuários de credenciais ou OAuth Google tenham seu progresso armazenado de forma persistente a cada passo concluído (Resiliência contra Abandono):
+
+```mermaid
+stateDiagram-v2
+    [*] --> Registro : Acessa /register
+    Registro --> Login : Cria conta (Credenciais)
+    Login --> ChecaOnboarding : Redireciona via Middleware
+    
+    state ChecaOnboarding <<choice>>
+    ChecaOnboarding --> OnboardingStep1 : se profile.onboardingStep < 5
+    ChecaOnboarding --> Dashboard : se profile.onboardingStep == 5 (Completo)
+    
+    state Onboarding {
+        OnboardingStep1 --> OnboardingStep2 : Salva Parcial (Idade & Nacionalidade)
+        OnboardingStep2 --> OnboardingStep3 : Salva Parcial (Escolaridade & Profissão)
+        OnboardingStep3 --> OnboardingStep4 : Salva Parcial (Idiomas falados)
+        OnboardingStep4 --> OnboardingStep5 : Salva Parcial (Objetivo de Imigração)
+        OnboardingStep5 --> FimOnboarding : Salva Parcial (Situação Financeira)
+    }
+
+    FimOnboarding --> Dashboard : Marca onboardingStep = 5 e exibe Dashboard
+    Dashboard --> Perfil : Navega para /profile
+    Perfil --> ExcluirConta : Solicita exclusão (GDPR/LGPD)
+    ExcluirConta --> [*]
+```
+
+Se o usuário fechar o browser no Passo 3, ao efetuar novo login, a página `/dashboard` identifica que `onboardingStep` é 2 e redireciona instantaneamente o usuário para o Passo 3 (`onboardingStep + 1`), restaurando o estado local das etapas salvas anteriormente.
+
+### 7.2 Medidas de Segurança de Autenticação
+
+1.  **Criptografia de Senha (bcrypt):** Senhas locais são hasheadas via `bcryptjs` utilizando fator de custo **12** (work factor balanceado entre forte segurança contra brute force offline e desempenho aceitável do servidor).
+2.  **Rate Limiting no Login (Anti-Brute Force):** Implementado no CredentialsProvider do NextAuth v5 um contador de tentativas por IP. Máximo de **10 tentativas por IP por hora**, retornando bloqueio do IP caso excedido.
+3.  **Cookies e Sessões Seguras:** Cookies de sessão JWT do Auth.js possuem `HttpOnly` ativo (prevenção contra ataques XSS), `Secure` em produção (transmissão restrita a conexões HTTPS) e `SameSite=Lax` (proteção contra CSRF).
+4.  **Integração de Roteamento Síncrono:** Uso do comportamento de redirecionamento nativo do NextAuth v5 no formulário de login para garantir que os cookies de sessão sejam gerados no cabeçalho HTTP da resposta do servidor antes da renderização das rotas protegidas no browser, eliminando race conditions comuns.
+
+### 7.3 Conformidade com Privacidade (GDPR/LGPD)
+
+1.  **Exportação de Dados:** Na tela `/profile`, o usuário pode acionar a exportação e baixar um arquivo JSON estruturado contendo todos os dados do seu cadastro, perfil de onboarding e lista de favoritos.
+2.  **Exclusão Permanente (Esquecimento):** Disponibilizada a exclusão física e definitiva do registro de usuário. A exclusão dispara a diretiva `onDelete: Cascade` no banco de dados, apagando imediatamente todas as entidades dependentes (`UserProfile`, `Account`, `Session`, `UserFavoriteCountry`, `UserRoadmapProgress`, `UserSearchHistory`).
+
+### 7.4 Políticas de RLS Adicionais (Supabase)
+
+Para garantir segurança na persistência de dados das novas tabelas:
+*   `user_favorite_countries`: Leitura e escrita permitidas apenas se `auth.uid() = user_id`.
+*   `user_roadmap_progress`: Leitura e modificação restritas ao proprietário da conta.
+*   `user_search_history`: Histórico de busca protegido para acesso exclusivo do respectivo usuário.
+

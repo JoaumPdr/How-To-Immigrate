@@ -10,19 +10,23 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(uuid()) @db.Uuid
-  name          String?
-  email         String          @unique
-  emailVerified DateTime?       @map("email_verified")
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  authenticator Authenticator[]
-  profile       UserProfile?
-  reviews       Review[]
-  roadmaps      Roadmap[]
-  createdAt     DateTime        @default(now()) @map("created_at")
-  updatedAt     DateTime        @updatedAt @map("updated_at")
+  id              String                @id @default(uuid()) @db.Uuid
+  name            String?
+  email           String                @unique
+  emailVerified   DateTime?             @map("email_verified")
+  image           String?
+  passwordHash    String?               @map("password_hash")
+  accounts        Account[]
+  sessions        Session[]
+  authenticator   Authenticator[]
+  profile         UserProfile?
+  reviews         Review[]
+  roadmaps        Roadmap[]
+  favorites       UserFavoriteCountry[]
+  roadmapProgress UserRoadmapProgress[]
+  searchHistory   UserSearchHistory[]
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
 
   @@map("users")
 }
@@ -91,6 +95,8 @@ model UserProfile {
   profession           String?
   languages            String[]
   immigrationObjective String?  @map("immigration_objective")
+  financialSituation   String?  @map("financial_situation")
+  onboardingStep       Int      @default(0) @map("onboarding_step")
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -99,24 +105,26 @@ model UserProfile {
 }
 
 model Country {
-  id           String             @id @default(uuid()) @db.Uuid
-  slug         String             @unique
-  name         String
-  nameEn       String             @map("name_en")
-  codeISO2     String             @unique @map("code_iso2")
-  codeISO3     String             @unique @map("code_iso3")
-  region       String
-  capital      String
-  currency     String
-  languages    String[]
-  flagUrl      String             @map("flag_url")
-  overallScore Float              @map("overall_score")
-  indicators   CountryIndicator[]
-  reviews      Review[]
-  articles     Article[]
-  roadmaps     Roadmap[]
-  createdAt    DateTime           @default(now()) @map("created_at")
-  updatedAt    DateTime           @updatedAt @map("updated_at")
+  id                  String                @id @default(uuid()) @db.Uuid
+  slug                String                @unique
+  name                String
+  nameEn              String                @map("name_en")
+  codeISO2            String                @unique @map("code_iso2")
+  codeISO3            String                @unique @map("code_iso3")
+  region              String
+  capital             String
+  currency            String
+  languages           String[]
+  flagUrl             String                @map("flag_url")
+  overallScore        Float                 @map("overall_score")
+  indicators          CountryIndicator[]
+  reviews             Review[]
+  articles            Article[]
+  roadmaps            Roadmap[]
+  userFavorites       UserFavoriteCountry[]
+  userSearchHistories UserSearchHistory[]
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
 
   @@map("countries")
 }
@@ -210,18 +218,19 @@ model Roadmap {
 }
 
 model RoadmapStep {
-  id           String   @id @default(uuid()) @db.Uuid
-  roadmapId    String   @db.Uuid @map("roadmap_id")
+  id           String                @id @default(uuid()) @db.Uuid
+  roadmapId    String                @db.Uuid @map("roadmap_id")
   order        Int
   title        String
   description  String
   status       String
-  visaType     String?  @map("visa_type")
+  visaType     String?               @map("visa_type")
   documents    String[]
-  officialLink String?  @map("official_link")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  roadmap      Roadmap  @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  officialLink String?               @map("official_link")
+  userProgress UserRoadmapProgress[]
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
+  roadmap      Roadmap               @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
 
   @@unique([roadmapId, order])
   @@map("roadmap_steps")
@@ -238,5 +247,42 @@ model AffiliatePartner {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("affiliate_partners")
+}
+
+model UserFavoriteCountry {
+  userId    String   @db.Uuid @map("user_id")
+  countryId String   @db.Uuid @map("country_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@id([userId, countryId])
+  @@map("user_favorite_countries")
+}
+
+model UserRoadmapProgress {
+  id        String      @id @default(uuid()) @db.Uuid
+  userId    String      @db.Uuid @map("user_id")
+  stepId    String      @db.Uuid @map("step_id")
+  completed Boolean     @default(true)
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  step      RoadmapStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stepId])
+  @@map("user_roadmap_progress")
+}
+
+model UserSearchHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  query     String?
+  countryId String?  @db.Uuid @map("country_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country   Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+
+  @@map("user_search_history")
 }
 

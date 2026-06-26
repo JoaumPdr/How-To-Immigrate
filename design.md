@@ -118,3 +118,20 @@ Todos os componentes abaixo foram implementados sob a pasta `components/ui/` uti
 ## 4. Componentes Testados e Validados (Suíte E2E & Snapshot)
 
 Todos os componentes primitivos possuem testes automatizados de snapshot em `__tests__/components.test.tsx` e foram validados em produção. O comportamento responsivo da Navbar e do Footer, a persistência da escolha do idioma (next-intl cookies) e a persistência da escolha de tema (localStorage class list) estão cobertos por testes de integração de interface no Playwright.
+
+---
+
+## 5. Padrão de Formulário Multi-Step Responsivo (Ações Fixas no Rodapé)
+
+Este padrão é projetado para fluxos com múltiplas etapas de entrada de dados (como Onboarding, Formulários de Review, etc.) e visa maximizar a conversão e o conforto de uso em viewports mobile (375px):
+
+1. **Barra de Progresso no Topo:**
+   - Barra de progresso visual de linha contínua fina e compacta, posicionada acima do conteúdo principal. Ela indica claramente qual etapa o usuário está visualizando (ex: "Etapa 3 de 5") sem empurrar o conteúdo principal da página para fora da viewport visível.
+2. **Ações Sticky no Rodapé (Footer Actions):**
+   - Os botões de navegação "Voltar" e "Continuar" são colocados em um contêiner com `position: sticky` no rodapé da viewport, utilizando um fundo com opacidade/blur ou cor sólida combinando com o tema (`bg-background/95 backdrop-blur-xs` ou `bg-neutral-50 dark:bg-neutral-950`).
+   - Garante que a ação de submissão do formulário esteja sempre visível e com clique acessível (Touch Target de no mínimo 44px de altura) sem que o usuário precise rolar a página inteira para achá-los.
+3. **Componentes Touch-Friendly e Chips:**
+   - Evitar dropdowns múltiplos complexos ou seletores pequenos. Para seleção de categorias, idiomas ou múltiplos valores, utilizar botões no formato de **Chips Grandes** ou **Cards de Opção Única** com feedback tátil no clique/toque (Active State destacado e anel de foco visível).
+4. **Resiliência e Retomada de Progresso:**
+   - Para fluxos de preenchimento longos, as respostas parciais de cada etapa devem ser salvas de forma incremental no banco de dados. Ao reabrir a aplicação, o usuário deve ser colocado automaticamente na etapa correspondente ao seu último progresso, minimizando retrabalho e abandono.
+

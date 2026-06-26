@@ -1,11 +1,38 @@
 import createMiddleware from "next-intl/middleware";
-import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { routing } from "./i18n/routing";
+import NextAuth from "next-auth";
+import { authConfig } from "./lib/auth.config";
 
 const intlMiddleware = createMiddleware(routing);
+const { auth } = NextAuth(authConfig);
 
-export default function middleware(request: NextRequest) {
-  // Obter a resposta do middleware de tradução (next-intl)
+export default auth(async function middleware(request) {
+  const session = request.auth;
+  const { nextUrl } = request;
+
+  // Extrair o pathname sem o prefixo do locale
+  const pathnameWithoutLocale = nextUrl.pathname.replace(/^\/(en|pt-BR)/, "");
+
+  const isProtected =
+    pathnameWithoutLocale === "/dashboard" ||
+    pathnameWithoutLocale.startsWith("/dashboard/") ||
+    pathnameWithoutLocale === "/profile" ||
+    pathnameWithoutLocale.startsWith("/profile/") ||
+    pathnameWithoutLocale === "/onboarding" ||
+    pathnameWithoutLocale.startsWith("/onboarding/");
+
+  const isLoggedIn = !!session?.user;
+
+  if (isProtected && !isLoggedIn) {
+    const locale = nextUrl.pathname.match(/^\/(en|pt-BR)/)?.[0] || "/pt-BR";
+    const callbackUrl = encodeURIComponent(nextUrl.href);
+    return NextResponse.redirect(
+      new URL(`${locale}/login?callbackUrl=${callbackUrl}`, request.url)
+    );
+  }
+
+  // Executar o middleware de tradução
   const response = intlMiddleware(request);
 
   // Adicionar cabeçalhos de segurança HTTP
@@ -21,12 +48,12 @@ export default function middleware(request: NextRequest) {
     );
   }
 
-  // Content-Security-Policy (CSP) - Estruturada e compatível com desenvolvimento (Fast Refresh)
+  // Content-Security-Policy (CSP) - Liberando flagcdn.com para as imagens das bandeiras
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-inline' 'unsafe-eval';
     style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https://*.supabase.co;
+    img-src 'self' blob: data: https://*.supabase.co https://flagcdn.com;
     font-src 'self' data:;
     connect-src 'self' https://*.supabase.co wss://*.supabase.co;
     frame-ancestors 'none';
@@ -36,7 +63,7 @@ export default function middleware(request: NextRequest) {
   response.headers.set("Content-Security-Policy", cspHeader);
 
   return response;
-}
+});
 
 export const config = {
   // Matcher que intercepta rotas de internacionalização e exclui arquivos estáticos/assets

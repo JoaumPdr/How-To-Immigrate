@@ -15,5 +15,95 @@
   "home": {
     "title": "Como Imigrar",
     "subtitle": "Compare critérios de imigração, explore o mapa interativo e planeje seu roadmap personalizado."
+  },
+  "auth": {
+    "loginTitle": "Entrar na sua conta",
+    "registerTitle": "Criar uma nova conta",
+    "name": "Nome Completo",
+    "email": "E-mail",
+    "password": "Senha",
+    "confirmPassword": "Confirmar Senha",
+    "buttonLogin": "Entrar",
+    "buttonRegister": "Cadastrar",
+    "googleButton": "Continuar com Google",
+    "noAccount": "Não tem uma conta?",
+    "hasAccount": "Já tem uma conta?",
+    "registerLink": "Cadastre-se",
+    "loginLink": "Faça login",
+    "errorCredentials": "E-mail ou senha incorretos.",
+    "errorGeneric": "Ocorreu um erro inesperado.",
+    "successRegister": "Conta criada com sucesso! Faça login."
+  },
+  "onboarding": {
+    "title": "Configurando seu Perfil de Imigração",
+    "subtitle": "Responda a algumas perguntas rápidas para personalizarmos suas recomendações e roadmaps.",
+    "step1Title": "Quem é você?",
+    "step1Desc": "Insira sua idade e nacionalidade atual.",
+    "step2Title": "Formação e Trabalho",
+    "step2Desc": "Qual sua escolaridade e profissão atual?",
+    "step3Title": "Idiomas falados",
+    "step3Desc": "Quais línguas você fala?",
+    "step4Title": "Seu Objetivo",
+    "step4Desc": "Qual seu principal objetivo com a imigração?",
+    "step5Title": "Planejamento Financeiro",
+    "step5Desc": "Selecione a faixa financeira disponível para seu plano.",
+    "age": "Idade",
+    "nationality": "Nacionalidade atual",
+    "education": "Escolaridade máxima",
+    "profession": "Profissão / Área de atuação",
+    "languages": "Idiomas falados",
+    "objective": "Objetivo de imigração",
+    "financial": "Orçamento disponível (em USD)",
+    "btnNext": "Continuar",
+    "btnBack": "Voltar",
+    "finish": "Finalizar e Ver Recomendações",
+    "resumeMessage": "Retomamos seu progresso da última etapa salva!",
+    "objectives": {
+      "work": "Trabalhar no exterior",
+      "study": "Estudar (Universidade / Intercâmbio)",
+      "investment": "Investir ou Abrir Empresa",
+      "family": "Reunião Familiar",
+      "retirement": "Aposentadoria / Viver de rendas"
+    },
+    "finances": {
+      "low": "Até $10.000 USD",
+      "medium": "Entre $10.000 e $30.000 USD",
+      "high": "Entre $30.000 e $100.000 USD",
+      "very_high": "Acima de $100.000 USD"
+    },
+    "educationLevels": {
+      "high_school": "Ensino Médio completo",
+      "bachelors": "Bacharelado / Graduação",
+      "masters": "Mestrado",
+      "phd": "Doutorado / Ph.D.",
+      "technical": "Ensino Técnico"
+    }
+  },
+  "dashboard": {
+    "title": "Seu Painel",
+    "welcome": "Olá, {name}!",
+    "profileNotDone": "Por favor, conclua seu onboarding para ver recomendações personalizadas.",
+    "startOnboarding": "Iniciar Onboarding",
+    "recommendedCountries": "Países Recomendados",
+    "recommendedCountriesDesc": "Melhores opções baseadas no seu perfil e objetivos.",
+    "myFavorites": "Seus Países Favoritos",
+    "myFavoritesDesc": "Acesso rápido aos países que você salvou.",
+    "roadmapProgress": "Progresso do Plano de Imigração",
+    "noFavorites": "Você ainda não favoritou nenhum país.",
+    "exploreMap": "Explorar o Mapa",
+    "noRoadmaps": "Nenhum roadmap ativo. Acesse a página de um país para planejar."
+  },
+  "profile": {
+    "title": "Seu Perfil",
+    "subtitle": "Gerencie seus dados pessoais, exporte suas informações ou exclua sua conta.",
+    "saveSuccess": "Perfil atualizado com sucesso!",
+    "exportData": "Exportar Dados (JSON)",
+    "exportDataDesc": "Baixe todos os seus dados coletados pela plataforma em conformidade com a LGPD/GDPR.",
+    "deleteAccount": "Excluir Conta Permanentemente",
+    "deleteAccountDesc": "Esta ação é irreversível e excluirá permanentemente todos os seus dados.",
+    "deleteConfirmTitle": "Excluir sua conta?",
+    "deleteConfirmText": "Tem certeza de que deseja excluir permanentemente sua conta e todas as informações associadas? Essa ação não pode ser desfeita.",
+    "buttonConfirmDelete": "Sim, excluir minha conta",
+    "buttonCancelDelete": "Cancelar"
   }
 }

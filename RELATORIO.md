@@ -284,11 +284,55 @@ Para proteger dados de usuários e avaliações no Supabase, as seguintes polít
 
 ---
 
-## 7. Sistema de Autenticação, Onboarding & Perfil (Etapa 04)
+## 7. Arquitetura e Fluxo de Dados do Mapa Interativo (Etapa 03)
+
+O mapa-múndi interativo representa a principal proposta de valor inicial da plataforma. A arquitetura de dados e de UX foi desenhada para garantir máxima performance, minificação de payload e excelente usabilidade em todos os viewports (375px, 768px, 1440px).
+
+### 7.1 Fluxo de Dados Unidirecional
+
+A renderização e interação do mapa seguem o seguinte pipeline de dados:
+
+```mermaid
+graph TD
+    DB[(Supabase / Postgres)] -->|Prisma Client| Repo[countryRepository.findMapView]
+    Repo -->|Filtro de Colunas Mínimo| API[GET /api/map]
+    API -->|ISR Cache 6 horas| Hook[useMapData.ts]
+    Hook -->|React State| Component[InteractiveMapSection]
+    Component -->|Countries Data| WorldMap[WorldMap.tsx]
+    Component -->|Filtros de Estado| MapFilters[MapFilters.tsx]
+    WorldMap -->|Filtros Regionais & Scores| SVG[SVG Map Paths]
+    SVG -->|Cor Dinâmica HSL| Gradient[MapColorGradient.ts]
+```
+
+1.  **Banco de Dados (PostgreSQL):** Os indicadores reais de ~200 países populados no banco servem como fonte de verdade.
+2.  **Repositório (`countryRepository.findMapView`):** Executa uma query otimizada no Prisma, ignorando dados volumosos (artigos, guias, descrições, histórico de auditoria) e selecionando apenas os atributos vitais ao mapa: `slug`, `name`, `nameEn`, `codeISO2`, `codeISO3`, `region`, `languages`, `overallScore` e `indicators` (apenas categoria e score).
+3.  **API (`GET /api/map`):** Serve os dados estruturados de forma minificada com **ISR (Incremental Static Regeneration) de 6 horas** (`revalidate: 21600`) e cabeçalho `Cache-Control` configurado para Edge Caching em produção.
+4.  **Hook (`useMapData.ts`):** Requisita a API, gerencia estados de `loading`, `error` e devolve a lista tipada para o shell.
+5.  **InteractiveMapSection (`InteractiveMapSection.tsx`):** Orquestra e conecta os seletores de filtros (`MapFilters`) e o mapa (`WorldMap`), filtrando a renderização em tempo real.
+6.  **Interpolação de Cores (`MapColorGradient.ts`):** Uma função memoizada que mapeia o score (0 a 100) para cores no espaço de cores HSL, transitando suavemente entre Vermelho (score 0), Laranja/Amarelo (score 50) e Verde Esmeralda (score 100). Valores nulos de score são representados pela cor cinza neutra (`var(--color-border)`).
+
+### 7.2 Decisões de UX para Responsividade e Touch
+
+A adaptação de um mapa cartográfico para telas de toque exige soluções específicas além do CSS fluido tradicional:
+
+-   **Hover vs. Tap (Toque):**
+    *   **Desktop:** O `CountryTooltip` é acionado pelo evento de `mouseenter` e segue a coordenada do ponteiro do mouse via `mousemove`. Um clique simples no país navega para a página `/country/[slug]`.
+    *   **Mobile / Touch:** O primeiro toque (tap) no país exibe o tooltip em formato fixado, adicionando um botão "X" para fechamento. O tooltip se auto-ajusta à viewport para nunca vazar. O segundo toque (ou o clique em "Ver detalhes" dentro do tooltip) navega para `/country/[slug]`. Um clique fora fecha o tooltip.
+-   **Gesto de Zoom e Pan:**
+    *   O pan (arraste com 1 dedo) e zoom de pinça (pinch-to-zoom) estão disponíveis dentro do elemento SVG do mapa. Para evitar prender o scroll vertical da página em telas mobile, o evento de scroll vertical (`wheel`) no mapa é desabilitado em viewports de toque.
+-   **Hit Targets de Países Pequenos (Microestados):**
+    *   Microestados como Singapura, Luxemburgo, Malta e Andorra foram enriquecidos com coordenadas de marcadores e uma **área de toque invisível expandida (círculo com raio de 22px / diâmetro de 44px)**, evitando a frustração do usuário ao tentar interagir com caminhos menores do que a ponta do dedo.
+-   **Componentes Responsivos Adicionais:**
+    *   **Filtros:** Barra horizontal inline no desktop, mas colapsada em um botão "Filtros" que abre um painel bottom-sheet deslizante (`Sheet`) no mobile.
+    *   **Legenda:** Exibida de forma expandida no desktop e compacta/flutuante (com menu toggle) no mobile.
+
+---
+
+## 8. Sistema de Autenticação, Onboarding & Perfil (Etapa 04)
 
 Na **Etapa 04**, a camada de autenticação segura e o questionário de onboarding multi-step responsivo foram totalmente consolidados.
 
-### 7.1 Diagrama de Estados do Fluxo de Onboarding
+### 8.1 Diagrama de Estados do Fluxo de Onboarding
 
 O fluxo de dados de onboarding garante que novos usuários de credenciais ou OAuth Google tenham seu progresso armazenado de forma persistente a cada passo concluído (Resiliência contra Abandono):
 
@@ -318,22 +362,21 @@ stateDiagram-v2
 
 Se o usuário fechar o browser no Passo 3, ao efetuar novo login, a página `/dashboard` identifica que `onboardingStep` é 2 e redireciona instantaneamente o usuário para o Passo 3 (`onboardingStep + 1`), restaurando o estado local das etapas salvas anteriormente.
 
-### 7.2 Medidas de Segurança de Autenticação
+### 8.2 Medidas de Segurança de Autenticação
 
 1.  **Criptografia de Senha (bcrypt):** Senhas locais são hasheadas via `bcryptjs` utilizando fator de custo **12** (work factor balanceado entre forte segurança contra brute force offline e desempenho aceitável do servidor).
 2.  **Rate Limiting no Login (Anti-Brute Force):** Implementado no CredentialsProvider do NextAuth v5 um contador de tentativas por IP. Máximo de **10 tentativas por IP por hora**, retornando bloqueio do IP caso excedido.
 3.  **Cookies e Sessões Seguras:** Cookies de sessão JWT do Auth.js possuem `HttpOnly` ativo (prevenção contra ataques XSS), `Secure` em produção (transmissão restrita a conexões HTTPS) e `SameSite=Lax` (proteção contra CSRF).
 4.  **Integração de Roteamento Síncrono:** Uso do comportamento de redirecionamento nativo do NextAuth v5 no formulário de login para garantir que os cookies de sessão sejam gerados no cabeçalho HTTP da resposta do servidor antes da renderização das rotas protegidas no browser, eliminando race conditions comuns.
 
-### 7.3 Conformidade com Privacidade (GDPR/LGPD)
+### 8.3 Conformidade com Privacidade (GDPR/LGPD)
 
 1.  **Exportação de Dados:** Na tela `/profile`, o usuário pode acionar a exportação e baixar um arquivo JSON estruturado contendo todos os dados do seu cadastro, perfil de onboarding e lista de favoritos.
 2.  **Exclusão Permanente (Esquecimento):** Disponibilizada a exclusão física e definitiva do registro de usuário. A exclusão dispara a diretiva `onDelete: Cascade` no banco de dados, apagando imediatamente todas as entidades dependentes (`UserProfile`, `Account`, `Session`, `UserFavoriteCountry`, `UserRoadmapProgress`, `UserSearchHistory`).
 
-### 7.4 Políticas de RLS Adicionais (Supabase)
+### 8.4 Políticas de RLS Adicionais (Supabase)
 
 Para garantir segurança na persistência de dados das novas tabelas:
 *   `user_favorite_countries`: Leitura e escrita permitidas apenas se `auth.uid() = user_id`.
 *   `user_roadmap_progress`: Leitura e modificação restritas ao proprietário da conta.
 *   `user_search_history`: Histórico de busca protegido para acesso exclusivo do respectivo usuário.
-

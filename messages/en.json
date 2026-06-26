@@ -49,10 +49,10 @@
     "step5Desc": "Select the financial budget available for your plan.",
     "age": "Age",
     "nationality": "Current nationality",
-    "education": "Highest education level",
+    "education": "Highest education",
     "profession": "Profession / Field of work",
     "languages": "Languages spoken",
-    "objective": "Immigration objective",
+    "objective": "Immigration goal",
     "financial": "Available budget (in USD)",
     "btnNext": "Continue",
     "btnBack": "Back",
@@ -61,9 +61,9 @@
     "objectives": {
       "work": "Work abroad",
       "study": "Study (University / Exchange)",
-      "investment": "Invest or Start a Business",
-      "family": "Family Reunion",
-      "retirement": "Retirement / Live on passive income"
+      "investment": "Invest or Open a Company",
+      "family": "Family Reunification",
+      "retirement": "Retirement / Passive Income"
     },
     "finances": {
       "low": "Up to $10,000 USD",
@@ -72,30 +72,30 @@
       "very_high": "Above $100,000 USD"
     },
     "educationLevels": {
-      "high_school": "High School complete",
-      "bachelors": "Bachelor's / Undergraduate",
+      "high_school": "High School completed",
+      "bachelors": "Bachelor's / College Degree",
       "masters": "Master's Degree",
       "phd": "Doctorate / Ph.D.",
-      "technical": "Technical Education"
+      "technical": "Technical School"
     }
   },
   "dashboard": {
     "title": "Your Dashboard",
     "welcome": "Hello, {name}!",
-    "profileNotDone": "Please complete your onboarding to view personalized recommendations.",
+    "profileNotDone": "Please complete your onboarding to see personalized recommendations.",
     "startOnboarding": "Start Onboarding",
     "recommendedCountries": "Recommended Countries",
     "recommendedCountriesDesc": "Best options based on your profile and goals.",
     "myFavorites": "Your Favorite Countries",
-    "myFavoritesDesc": "Quick access to countries you've saved.",
+    "myFavoritesDesc": "Quick access to the countries you saved.",
     "roadmapProgress": "Immigration Plan Progress",
     "noFavorites": "You haven't favorited any countries yet.",
     "exploreMap": "Explore the Map",
-    "noRoadmaps": "No active roadmaps. Go to a country page to start planning."
+    "noRoadmaps": "No active roadmaps. Visit a country page to start planning."
   },
   "profile": {
     "title": "Your Profile",
-    "subtitle": "Manage your personal data, export your information, or delete your account.",
+    "subtitle": "Manage your personal details, export your data, or delete your account.",
     "saveSuccess": "Profile updated successfully!",
     "exportData": "Export Data (JSON)",
     "exportDataDesc": "Download all your data collected by the platform in compliance with LGPD/GDPR.",
@@ -105,5 +105,24 @@
     "deleteConfirmText": "Are you sure you want to permanently delete your account and all associated information? This action cannot be undone.",
     "buttonConfirmDelete": "Yes, delete my account",
     "buttonCancelDelete": "Cancel"
+  },
+  "map": {
+    "title": "Interactive Immigration Map",
+    "filterTitle": "Map Filters",
+    "region": "Region",
+    "allRegions": "All Regions",
+    "indicator": "Color by Indicator",
+    "overallScore": "Overall Score",
+    "safety": "Safety",
+    "costOfLiving": "Cost of Living",
+    "jobMarket": "Job Market",
+    "visaEase": "Visa Ease",
+    "healthcare": "Healthcare",
+    "culturalIntegration": "Cultural Integration",
+    "scoreRange": "Score Range",
+    "allScores": "All Scores",
+    "viewDetails": "View details",
+    "noCountries": "No countries match the selected filters.",
+    "filters": "Filters"
   }
 }

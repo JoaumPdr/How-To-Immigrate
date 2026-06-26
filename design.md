@@ -121,7 +121,30 @@ Todos os componentes primitivos possuem testes automatizados de snapshot em `__t
 
 ---
 
-## 5. Padrão de Formulário Multi-Step Responsivo (Ações Fixas no Rodapé)
+## 5. Interação do Mapa por Dispositivo
+
+Esta seção detalha o padrão de comportamento de UX para interações em mapas geográficos e visualizações de dados (como o comparador de países) entre diferentes dispositivos.
+
+### 5.1 Desktop (Interação via Mouse)
+- **Hover (Passar o Mouse):** Exibe imediatamente o `CountryTooltip` no cursor do mouse com informações consolidadas do país (nome, score geral, indicadores de segurança, custo de vida, mercado de trabalho e idioma).
+- **Click (Clique Simples):** Navega imediatamente para a página de detalhes do país em `/country/[slug]`.
+
+### 5.2 Mobile e Touch (Interação via Toque)
+- **Primeiro Tap (Toque Único):** Em vez de hover, exibe o `CountryTooltip` fixado na tela próximo à área tocada. Um botão de fechamento (X) fica disponível e o tooltip pode ser fechado clicando em qualquer área vazia fora dele ou no próprio mapa.
+- **Segundo Tap / "Ver detalhes":** Um segundo toque sobre o mesmo país (ou o clique no link "Ver detalhes" dentro do tooltip) realiza a navegação para `/country/[slug]`.
+- **Pan e Zoom:** Gestos de arrastar com um dedo realizam o Pan (movimentação) do mapa. Gestos de pinça (pinch-to-zoom) permitem aproximar e afastar. O zoom do mapa ignora o evento de rolagem vertical (wheel) para não atrapalhar o scroll vertical natural da página.
+
+### 5.3 Hit Areas Ampliadas para Microestados
+- Países pequenos com áreas geográficas reduzidas (ex: Singapura, Luxemburgo, Malta, Andorra) possuem um marcador visual de cor e uma **área de toque invisível ampliada (hit target)** circular com raio de 22px (diâmetro de 44px) ao redor de suas coordenadas geográficas. Isso garante acessibilidade e previne a frustração em telas touch.
+
+### 5.4 Filtros e Legenda Responsivos
+- **Filtros no Desktop:** Exibidos horizontalmente acima do mapa como um painel inline de fácil acesso.
+- **Filtros no Mobile:** A barra horizontal é omitida e substituída por um botão "Filtros" que abre o componente `Sheet` a partir da base (gaveta bottom-sheet), economizando espaço vertical de tela.
+- **Legenda:** Renderizada no canto inferior esquerdo do mapa. No mobile, é formatada de forma compacta.
+
+---
+
+## 6. Padrão de Formulário Multi-Step Responsivo (Ações Fixas no Rodapé)
 
 Este padrão é projetado para fluxos com múltiplas etapas de entrada de dados (como Onboarding, Formulários de Review, etc.) e visa maximizar a conversão e o conforto de uso em viewports mobile (375px):
 
@@ -134,4 +157,3 @@ Este padrão é projetado para fluxos com múltiplas etapas de entrada de dados 
    - Evitar dropdowns múltiplos complexos ou seletores pequenos. Para seleção de categorias, idiomas ou múltiplos valores, utilizar botões no formato de **Chips Grandes** ou **Cards de Opção Única** com feedback tátil no clique/toque (Active State destacado e anel de foco visível).
 4. **Resiliência e Retomada de Progresso:**
    - Para fluxos de preenchimento longos, as respostas parciais de cada etapa devem ser salvas de forma incremental no banco de dados. Ao reabrir a aplicação, o usuário deve ser colocado automaticamente na etapa correspondente ao seu último progresso, minimizando retrabalho e abandono.
-

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useSession, signOut } from "next-auth/react";
 
 /**
  * Componente de Cabeçalho e Barra de Navegação Global.
@@ -16,11 +17,19 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 export function Navbar() {
   const t = useTranslations("nav");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const { status } = useSession();
+  const isLoggedIn = status === "authenticated";
 
   const navigationItems = [
     { name: t("home"), href: "/" },
     { name: t("map"), href: "/map" },
     { name: t("countries"), href: "/countries" },
+    ...(isLoggedIn
+      ? [
+          { name: "Dashboard", href: "/dashboard" },
+          { name: "Perfil", href: "/profile" },
+        ]
+      : []),
     { name: t("reviews"), href: "/reviews" },
     { name: t("about"), href: "/about" },
   ];
@@ -55,9 +64,22 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-4">
           <LanguageSwitcher />
           <ThemeToggle />
-          <Button variant="primary" size="sm" className="h-9 min-h-0 px-4">
-            {t("home") === "Início" ? "Entrar" : "Sign In"}
-          </Button>
+          {isLoggedIn ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 min-h-0 px-4"
+              onClick={() => signOut({ callbackUrl: "/" })}
+            >
+              {t("home") === "Início" ? "Sair" : "Sign Out"}
+            </Button>
+          ) : (
+            <Link href="/login">
+              <Button variant="primary" size="sm" className="h-9 min-h-0 px-4">
+                {t("home") === "Início" ? "Entrar" : "Sign In"}
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Actions & Hamburguer (Mobile) */}
@@ -101,16 +123,28 @@ export function Navbar() {
               <span className="text-sm font-medium text-muted-foreground">Idioma / Language</span>
               <LanguageSwitcher />
             </div>
-            <Button
-              variant="primary"
-              className="w-full mt-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              {t("home") === "Início" ? "Entrar" : "Sign In"}
-            </Button>
+            {isLoggedIn ? (
+              <Button
+                variant="outline"
+                className="w-full mt-2"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  signOut({ callbackUrl: "/" });
+                }}
+              >
+                {t("home") === "Início" ? "Sair" : "Sign Out"}
+              </Button>
+            ) : (
+              <Link href="/login" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="primary" className="w-full mt-2">
+                  {t("home") === "Início" ? "Entrar" : "Sign In"}
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </Sheet>
     </header>
   );
 }
+

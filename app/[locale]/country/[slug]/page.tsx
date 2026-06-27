@@ -1,11 +1,12 @@
 import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin, Globe, Landmark, Users2, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { countryRepository } from "../../../../lib/repositories/countryRepository";
-import { getMapColor } from "../../../../lib/utils/MapColorGradient";
-import { Badge } from "../../../../components/ui/Badge";
-import { Card, CardHeader, CardTitle, CardContent } from "../../../../components/ui/Card";
+import { auth } from "../../../../lib/auth";
+import { prisma } from "../../../../lib/prisma";
+import { CountryHero } from "../../../../components/country/CountryHero";
+import { CountryTabs } from "../../../../components/country/CountryTabs";
 
 interface CountryPageProps {
   params: Promise<{
@@ -14,173 +15,161 @@ interface CountryPageProps {
   }>;
 }
 
-export async function generateMetadata({ params }: CountryPageProps) {
-  const { slug } = await params;
-  const country = await countryRepository.findBySlug(slug);
+// Slugs oficiais dos 20 países seed
+const SEED_SLUGS = [
+  "canada", "portugal", "germany", "ireland", "netherlands",
+  "australia", "new-zealand", "spain", "united-states", "united-kingdom",
+  "france", "belgium", "switzerland", "norway", "sweden",
+  "finland", "denmark", "japan", "south-korea", "united-arab-emirates"
+];
 
-  if (!country) return { title: "País Não Encontrado" };
+/**
+ * Geração Estática de Parâmetros (SSG) para os 20 países do seed.
+ * Isso garante que essas páginas sejam compiladas de forma estática no build do Next.js.
+ */
+export async function generateStaticParams() {
+  const locales = ["pt-BR", "en"];
+  const params: { locale: string; slug: string }[] = [];
 
-  return {
-    title: `${country.name} - Planejamento de Imigração`,
-    description: `Explore as estatísticas, mercado de trabalho, custo de vida e segurança para imigrar para o ${country.name}.`
-  };
+  for (const locale of locales) {
+    for (const slug of SEED_SLUGS) {
+      params.push({ locale, slug });
+    }
+  }
+
+  return params;
 }
 
 /**
- * Página Placeholder/Skeleton para exibir informações preliminares de um país
- * antes da implementação da página completa na Etapa 05.
+ * Geração dinâmica de tags de SEO e OpenGraph para indexação
  */
+export async function generateMetadata({ params }: CountryPageProps) {
+  const { slug, locale } = await params;
+
+  // Sanitização estrita do slug contra path traversal
+  if (!slug || !/^[a-z0-9\-]+$/i.test(slug)) {
+    return { title: "País Não Encontrado" };
+  }
+
+  const country = await countryRepository.findBySlug(slug);
+  if (!country) return { title: "País Não Encontrado" };
+
+  const countryName = locale === "en" ? country.nameEn : country.name;
+
+  return {
+    title: `${countryName} - Planejamento e Guia de Imigração | How To Immigrate`,
+    description: locale === "en"
+      ? `Complete step-by-step guide to immigrate to ${countryName}. Discover required visas, official links, cost of living, and safety metrics.`
+      : `Guia passo a passo completo para imigrar para o ${countryName}. Descubra os vistos exigidos, canais oficiais, custo de vida e segurança.`,
+    openGraph: {
+      title: `${countryName} - Guia de Imigração`,
+      description: `Estatísticas detalhadas e roadmap de visto para o ${countryName}.`,
+      images: [
+        {
+          url: country.flagUrl,
+          alt: `Flag of ${countryName}`
+        }
+      ]
+    }
+  };
+}
+
 export default async function CountryPage({ params }: CountryPageProps) {
   const { locale, slug } = await params;
-  const country = await countryRepository.findBySlug(slug);
+
+  // Sanitização estrita contra path traversal
+  if (!slug || !/^[a-z0-9\-]+$/i.test(slug)) {
+    notFound();
+  }
+
+  // Busca todos os dados em uma única query otimizada
+  const country = await countryRepository.findDetailBySlug(slug);
 
   if (!country) {
     notFound();
   }
 
-  const overallColor = getMapColor(country.overallScore);
+  const session = await auth();
+  let initialCompletedStepIds: string[] = [];
 
-  const getIndicatorScore = (category: string): number => {
-    const ind = country.indicators.find((i) => i.category === category);
-    return ind ? ind.score : 0;
+  // Se o usuário estiver logado, busca o progresso dos passos do roadmap no banco
+  if (session?.user?.id) {
+    const userProgress = await prisma.userRoadmapProgress.findMany({
+      where: {
+        userId: session.user.id,
+        completed: true
+      },
+      select: {
+        stepId: true
+      }
+    });
+    initialCompletedStepIds = userProgress.map((p) => p.stepId);
+  }
+
+  const isSeedCountry = SEED_SLUGS.includes(slug);
+  const countryName = locale === "en" ? country.nameEn : country.name;
+
+  // Injeção de Structured Data (JSON-LD) para otimizar SEO público
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    "name": countryName,
+    "description": locale === "en"
+      ? `Immigration guide and visa details for ${countryName}`
+      : `Guia de imigração e detalhes de vistos para ${countryName}`,
+    "image": country.flagUrl,
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": country.codeISO2
+    }
   };
-
-  const formattedLanguages = country.languages
-    .map((l) => l.toUpperCase())
-    .join(", ");
-
-  const indicatorsList = [
-    { key: "safety", label: "Segurança", desc: "Índice de segurança pública" },
-    { key: "costOfLiving", label: "Custo de Vida", desc: "Índice de viabilidade econômica" },
-    { key: "jobMarket", label: "Mercado de Trabalho", desc: "Oportunidades e salários" },
-    { key: "visaEase", label: "Facilidade de Visto", desc: "Facilidade de legalização burocrática" },
-    { key: "healthcare", label: "Saúde", desc: "Qualidade do sistema médico" },
-    { key: "culturalIntegration", label: "Adaptação Cultural", desc: "Idioma e receptividade social" }
-  ];
 
   return (
     <main className="container mx-auto px-4 py-8 max-w-5xl">
+      {/* Script JSON-LD injetado no corpo para indexação SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* Botão de Retorno */}
-      <Link href={`/${locale}`} className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors mb-6 group">
-        <ArrowLeft className="w-4 h-4 transform group-hover:-translate-x-0.5 transition-transform" />
-        Voltar para o mapa
-      </Link>
-
-      {/* Alerta de MVP / Skeleton */}
-      <div className="flex gap-3 p-4 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-sm mb-8">
-        <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-bold">MVP Core:</span> Você está visualizando a página de estatísticas preliminares obtidas do banco. O guia detalhado de vistos, reviews da comunidade e o roteiro personalizado estarão disponíveis nas próximas etapas de desenvolvimento.
-        </div>
+      <div className="mb-6">
+        <Link
+          href={`/${locale}`}
+          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 transform group-hover:-translate-x-0.5 transition-transform" />
+          {locale === "en" ? "Back to map" : "Voltar para o mapa"}
+        </Link>
       </div>
 
-      {/* Grid Principal */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Coluna da Esquerda: Ficha Rápida */}
-        <div className="md:col-span-1 flex flex-col gap-6">
-          <Card>
-            <CardHeader className="flex flex-col gap-2 pb-2">
-              <div className="flex items-center gap-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={country.flagUrl}
-                  alt={`Flag of ${country.nameEn}`}
-                  className="w-12 h-8 object-cover rounded-xs border border-border/50 shrink-0"
-                />
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                    {locale === "en" ? country.nameEn : country.name}
-                  </h1>
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {country.codeISO3} / {country.codeISO2}
-                  </span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4 text-sm pt-4 border-t border-border/50">
-              {/* Score Geral */}
-              <div className="flex justify-between items-center bg-muted/30 p-3 rounded-lg border border-border/30">
-                <span className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                  Score de Imigração
-                </span>
-                <span
-                  style={{ color: overallColor }}
-                  className="text-2xl font-black font-mono"
-                >
-                  {country.overallScore.toFixed(1)}
-                </span>
-              </div>
-
-              {/* Informações Gerais */}
-              <div className="flex flex-col gap-3 pt-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="w-4 h-4 shrink-0" />
-                  <span>Região: <strong className="text-foreground">{country.region}</strong></span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Globe className="w-4 h-4 shrink-0" />
-                  <span>Capital: <strong className="text-foreground">{country.capital}</strong></span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Landmark className="w-4 h-4 shrink-0" />
-                  <span>Moeda: <strong className="text-foreground">{country.currency}</strong></span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users2 className="w-4 h-4 shrink-0" />
-                  <span>Idiomas: <strong className="text-foreground">{formattedLanguages}</strong></span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Banner de Fallback Elegante para Países Não-Seed */}
+      {!isSeedCountry && (
+        <div className="flex gap-3 p-4 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs md:text-sm mb-6 animate-fade-in">
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold">{locale === "en" ? "Roadmap In Development" : "Guia em Desenvolvimento"}:</span>{" "}
+            {locale === "en"
+              ? `Currently, only basic immigration metrics are available for ${countryName}. Our community is working to map out official step-by-step guides, visas, and housing details for this country.`
+              : `Atualmente, apenas as métricas básicas de imigração estão disponíveis para o ${countryName}. Nossa comunidade está trabalhando para mapear guias governamentais passo a passo, vistos e moradia.`}
+          </div>
         </div>
+      )}
 
-        {/* Coluna da Direita: Indicadores e Skeleton de Conteúdo */}
-        <div className="md:col-span-2 flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Indicadores Detalhados</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {indicatorsList.map((ind) => {
-                  const score = getIndicatorScore(ind.key);
-                  const color = getMapColor(score);
-                  return (
-                    <div key={ind.key} className="p-3 bg-muted/20 border border-border/50 rounded-lg flex flex-col gap-1.5">
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold text-sm text-foreground">{ind.label}</span>
-                        <Badge style={{ backgroundColor: color, color: "#fff" }} className="font-mono text-xs font-bold border-none">
-                          {score}
-                        </Badge>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">{ind.desc}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+      {/* Hero do País */}
+      <CountryHero country={country} locale={locale} />
 
-          {/* Skeleton de Conteúdo (Simula guias e depoimentos) */}
-          <Card className="opacity-80">
-            <CardHeader className="pb-2">
-              <div className="h-5 w-48 bg-muted rounded-md animate-pulse mb-1" />
-              <div className="h-3 w-64 bg-muted rounded-md animate-pulse" />
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4 mt-4">
-              <div className="flex flex-col gap-2">
-                <div className="h-4 w-full bg-muted rounded-md animate-pulse" />
-                <div className="h-4 w-5/6 bg-muted rounded-md animate-pulse" />
-                <div className="h-4 w-4/5 bg-muted rounded-md animate-pulse" />
-              </div>
-              <div className="flex flex-col gap-2 mt-2">
-                <div className="h-4 w-full bg-muted rounded-md animate-pulse" />
-                <div className="h-4 w-full bg-muted rounded-md animate-pulse" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* Abas e Conteúdos */}
+      <CountryTabs
+        country={{
+          ...country,
+          visas: country.visas || [],
+          officialLinks: country.officialLinks || [],
+          roadmaps: country.roadmaps || []
+        }}
+        initialCompletedStepIds={initialCompletedStepIds}
+        locale={locale}
+      />
     </main>
   );
 }

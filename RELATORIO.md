@@ -380,3 +380,37 @@ Para garantir segurança na persistência de dados das novas tabelas:
 *   `user_favorite_countries`: Leitura e escrita permitidas apenas se `auth.uid() = user_id`.
 *   `user_roadmap_progress`: Leitura e modificação restritas ao proprietário da conta.
 *   `user_search_history`: Histórico de busca protegido para acesso exclusivo do respectivo usuário.
+
+---
+
+## 9. Arquitetura e Roteamento de Páginas de Países e Roadmaps (Etapa 05)
+
+Na **Etapa 05**, a experiência final das páginas de países foi consolidada integrando dados estáticos, navegação reativa, simulador de vistos e persistência de progresso de imigração.
+
+### 9.1 Estratégia de Roteamento (SSG vs. SSR Fallback)
+
+*   **Pré-renderização Estática (SSG):** As rotas correspondentes aos **20 países mais buscados (seed)** são geradas de forma 100% estática durante a compilação do Next.js utilizando `generateStaticParams`. Isso otimiza o tempo de resposta inicial para menos de 100ms e maximiza a pontuação no Core Web Vitals.
+*   **SSR Dinâmico & Fallback:** Slugs correspondentes a outros países da base de dados são carregados dinamicamente via Server-Side Rendering (SSR). Caso o país exista no banco de dados mas não tenha guias estruturados cadastrados, a página renderiza suas estatísticas de pontuação normalmente e exibe um alerta explicativo informando que o roteiro e os vistos detalhados ainda estão sendo mapeados. Caso o slug seja inexistente, a aplicação retorna o erro padrão `404 Not Found`.
+*   **Sanitização de Rotas:** Todos os parâmetros de rota dinâmicos (`[slug]`) passam por uma sanitização rigorosa via expressão regular (`/^[a-z0-9\-]+$/i`) tanto nas rotas do frontend quanto nos endpoints de API, prevenindo falhas de injeção de parâmetros ou path traversal.
+
+### 9.2 Extensão do Modelo de Dados (Prisma Schema)
+
+O banco de dados foi estendido com três novos modelos de dados vinculados a `Country`:
+1.  **`visas` (Vistos):** Armazena dados de vistos disponíveis por país, contendo nome, tipo (trabalho, estudo, investimento, aposentadoria), descrição, requisitos específicos (array de strings), documentos básicos exigidos (array de strings), solvência financeira mínima requerida e link para o portal governamental oficial.
+2.  **`official_links` (Links Governamentais):** Centraliza URLs seguras e categorizadas (imigração geral, embaixada, consulado) com suporte a múltiplos idiomas de interface (`language`).
+3.  **`country_details` (Guia Textual):** Tabela de dados de extensão contendo descrições textuais ricas em formato Markdown para as abas de Visão Geral, Custo de Vida, Mercado de Trabalho, Saúde, Educação e Moradia em português e inglês.
+
+### 9.3 APIs de Consulta Segura e Sanitizada
+
+Disponibilizados três endpoints de leitura pública com sanitização integrada:
+*   `GET /api/countries/[slug]/roadmap`: Retorna o roadmap ordenado com seus passos estruturados e vistos associados.
+*   `GET /api/countries/[slug]/visas`: Retorna a lista completa de vistos do respectivo país.
+*   `GET /api/countries/[slug]/links`: Retorna os links governamentais higienizados.
+*   `POST /api/user/roadmap/progress` (Privado): Permite ao usuário logado marcar passos como concluídos, salvando o progresso composto de forma síncrona na tabela `user_roadmap_progress` e recalculando de forma incremental a porcentagem global de andamento no roadmap daquele país.
+
+### 9.4 Otimização de SEO e JSON-LD
+
+Para otimizar o rankeamento nos mecanismos de busca (SEO):
+*   **Tags de SEO Dinâmicas:** A função `generateMetadata` renderiza tags exclusivas de título, descrição e OpenGraph utilizando a bandeira do país como imagem de compartilhamento nas redes sociais de acordo com o idioma selecionado.
+*   **JSON-LD Estruturado:** Injeção programática do script `application/ld+json` do tipo `Place` contendo o nome localizado do país, código ISO, moeda e descrição do guia. Isso possibilita a exibição de Rich Snippets nos resultados de pesquisa do Google.
+

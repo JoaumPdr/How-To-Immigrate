@@ -134,5 +134,46 @@ export const countryRepository = {
     }));
 
     return calculateOverallScore(indicatorsInput);
+  },
+
+  /**
+   * Busca os detalhes estruturados, vistos, links e roadmap completo do país.
+   * 
+   * @param slug Identificador único do país
+   */
+  async findDetailBySlug(slug: string) {
+    return prisma.country.findUnique({
+      where: { slug },
+      include: {
+        indicators: {
+          orderBy: {
+            category: "asc"
+          }
+        },
+        detail: true,
+        visas: {
+          orderBy: {
+            name: "asc"
+          }
+        },
+        officialLinks: {
+          orderBy: {
+            title: "asc"
+          }
+        },
+        roadmaps: {
+          include: {
+            steps: {
+              include: {
+                visa: true
+              },
+              orderBy: {
+                order: "asc"
+              }
+            }
+          }
+        }
+      }
+    });
   }
 };

@@ -157,3 +157,20 @@ Este padrão é projetado para fluxos com múltiplas etapas de entrada de dados 
    - Evitar dropdowns múltiplos complexos ou seletores pequenos. Para seleção de categorias, idiomas ou múltiplos valores, utilizar botões no formato de **Chips Grandes** ou **Cards de Opção Única** com feedback tátil no clique/toque (Active State destacado e anel de foco visível).
 4. **Resiliência e Retomada de Progresso:**
    - Para fluxos de preenchimento longos, as respostas parciais de cada etapa devem ser salvas de forma incremental no banco de dados. Ao reabrir a aplicação, o usuário deve ser colocado automaticamente na etapa correspondente ao seu último progresso, minimizando retrabalho e abandono.
+
+---
+
+## 7. Navegação de Abas Mobile & Fallback de Gráficos de Dados
+
+Projetado para telas detalhadas de dados (como páginas de país) para garantir que grandes volumes de dados não quebrem e permaneçam acessíveis em qualquer dispositivo:
+
+1. **Tabs Responsivas (Horizontal Scroll & Snapping):**
+   - Em viewports mobile (< 768px), as abas horizontais tradicionais são empacotadas em uma listagem horizontal com rolagem livre (`overflow-x-auto snap-x scrollbar-none`).
+   - Gradientes sutis (`bg-gradient-to-r`) são adicionados nas laterais esquerda e direita para indicar visualmente a existência de mais opções roláveis.
+   - Ao ativar uma aba, a viewport rola de forma programática e suave (`scrollIntoView` com `inline: "center"`) para centralizar a aba selecionada na tela do usuário.
+2. **Radar Chart Fallback:**
+   - Gráficos de Radar (como os que exibem as 6 dimensões de qualidade de vida do país) exigem espaço lateral de tela para que seus rótulos sejam legíveis.
+   - Em resoluções muito baixas (larguras menores que 450px), o gráfico é dinamicamente omitido e substituído por uma **Listagem Vertical de Barras de Progresso** estilizadas com as respectivas cores do score geral do país. Isso mantém a clareza analítica e evita poluição visual ou sobreposição de textos.
+3. **Tabelas de Dados Compactadas:**
+   - Tabelas extensas (como as de Custo de Vida) são renderizadas de forma flexível: em desktop exibem colunas detalhadas em formato de tabela regular; em mobile são convertidas em listas de cards ou blocos verticais independentes, garantindo leitura linear rápida.
+

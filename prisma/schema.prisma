@@ -123,6 +123,9 @@ model Country {
   roadmaps            Roadmap[]
   userFavorites       UserFavoriteCountry[]
   userSearchHistories UserSearchHistory[]
+  visas               Visa[]
+  officialLinks       OfficialLink[]
+  detail              CountryDetail?
   createdAt           DateTime              @default(now()) @map("created_at")
   updatedAt           DateTime              @updatedAt @map("updated_at")
 
@@ -205,13 +208,13 @@ model Article {
 
 model Roadmap {
   id                 String        @id @default(uuid()) @db.Uuid
-  userId             String        @db.Uuid @map("user_id")
+  userId             String?       @db.Uuid @map("user_id")
   countryId          String        @db.Uuid @map("country_id")
   progressPercentage Int           @map("progress_percentage")
   steps              RoadmapStep[]
   createdAt          DateTime      @default(now()) @map("created_at")
   updatedAt          DateTime      @updatedAt @map("updated_at")
-  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   country            Country       @relation(fields: [countryId], references: [id], onDelete: Cascade)
 
   @@map("roadmaps")
@@ -228,6 +231,8 @@ model RoadmapStep {
   documents    String[]
   officialLink String?               @map("official_link")
   userProgress UserRoadmapProgress[]
+  visaId       String?               @db.Uuid @map("visa_id")
+  visa         Visa?                 @relation(fields: [visaId], references: [id], onDelete: SetNull)
   createdAt    DateTime              @default(now()) @map("created_at")
   updatedAt    DateTime              @updatedAt @map("updated_at")
   roadmap      Roadmap               @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
@@ -285,4 +290,72 @@ model UserSearchHistory {
 
   @@map("user_search_history")
 }
+
+model Visa {
+  id                   String        @id @default(uuid()) @db.Uuid
+  countryId            String        @db.Uuid @map("country_id")
+  name                 String
+  type                 String        // ex: "work", "study", "investment", "retirement"
+  description          String        @db.Text
+  requirements         String[]      @map("requirements")
+  documents            String[]      @map("documents")
+  financialRequirement String?       @map("financial_requirement")
+  officialLink         String?       @map("official_link")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+  country              Country       @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  roadmapSteps         RoadmapStep[]
+
+  @@map("visas")
+}
+
+model OfficialLink {
+  id        String   @id @default(uuid()) @db.Uuid
+  countryId String   @db.Uuid @map("country_id")
+  title     String
+  url       String
+  type      String
+  language  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@map("official_links")
+}
+
+model CountryDetail {
+  id             String   @id @default(uuid()) @db.Uuid
+  countryId      String   @unique @db.Uuid @map("country_id")
+  
+  // Visão Geral
+  overview       String   @db.Text
+  overviewEn     String   @db.Text @map("overview_en")
+  
+  // Custo de Vida
+  costOfLiving   String   @db.Text
+  costOfLivingEn String   @db.Text @map("cost_of_living_en")
+  
+  // Mercado de Trabalho
+  jobMarket      String   @db.Text
+  jobMarketEn    String   @db.Text @map("job_market_en")
+  
+  // Saúde
+  healthcare     String   @db.Text
+  healthcareEn   String   @db.Text @map("healthcare_en")
+  
+  // Educação
+  education      String   @db.Text
+  educationEn    String   @db.Text @map("education_en")
+  
+  // Moradia
+  housing        String   @db.Text
+  housingEn      String   @db.Text @map("housing_en")
+  
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  country        Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@map("country_details")
+}
+
 

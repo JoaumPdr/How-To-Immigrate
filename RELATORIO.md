@@ -414,3 +414,22 @@ Para otimizar o rankeamento nos mecanismos de busca (SEO):
 *   **Tags de SEO Dinâmicas:** A função `generateMetadata` renderiza tags exclusivas de título, descrição e OpenGraph utilizando a bandeira do país como imagem de compartilhamento nas redes sociais de acordo com o idioma selecionado.
 *   **JSON-LD Estruturado:** Injeção programática do script `application/ld+json` do tipo `Place` contendo o nome localizado do país, código ISO, moeda e descrição do guia. Isso possibilita a exibição de Rich Snippets nos resultados de pesquisa do Google.
 
+---
+
+## 10. Correção de Placeholders e Páginas Gerais (Branch `A/fix-placeholder-pages`)
+
+Durante a homologação final do projeto após a conclusão das etapas core (00 a 05), identificou-se que as rotas dedicadas `/map` (Mapa Interativo) e `/countries` (Comparador de Países) ainda renderizavam textos placeholders estáticos do início do projeto. A branch alternativa `A/fix-placeholder-pages` foi criada para solucionar o problema e entregar a experiência de produto completa.
+
+### 10.1 Solução do Mapa Dedicado (`/map`)
+
+*   **Renderização Direta:** A rota `app/[locale]/map/page.tsx` foi atualizada de um esqueleto de texto para um contêiner de página inteira (`max-w-7xl`) que importa e renderiza a seção `InteractiveMapSection` diretamente no lado do cliente.
+*   **Melhoria de UX:** Agora o usuário conta com um layout premium dedicado que oferece um cabeçalho explicativo exclusivo em dois idiomas e exibe o mapa de cores e filtros com alta performance em uma viewport maximizada.
+
+### 10.2 Comparador de Países e Busca Reativa (`/countries`)
+
+*   **Página Dinâmica ISR:** A rota `app/[locale]/countries/page.tsx` foi transformada em uma página dinâmica com cache ISR (`revalidate = 3600`), que busca de forma assíncrona no banco de dados todos os ~210 países usando o método `countryRepository.findAll()`.
+*   **Componente Interativo (`CountriesList.tsx`):** Criado o Client Component `CountriesList` que recebe a listagem inicial e orquestra a experiência de busca e comparação:
+    *   **Busca Instantânea:** Filtro reativo no lado do cliente buscando por nome do país, capital ou código ISO.
+    *   **Filtros de Região e Score:** Seletores de filtros para isolar continentes ou faixas de score (Excelente, Bom, Regular, Difícil).
+    *   **Ordenação Flexível:** Permite classificar por Nome do País, Score Geral de Imigração e Custo de Vida em ordem ascendente ou descendente.
+    *   **Alternância de Visualização:** Suporte a exibição em **Grade de Cards** (estatísticas rápidas e cores de scores) ou **Tabela Comparativa** (exibição estruturada com notas de Custo de Vida, Segurança e Mercado de Trabalho lado a lado).
